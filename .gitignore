@@ -1,0 +1,21 @@
+# R specific
+.Rhistory
+.RData
+.Rproj.user
+*.Rproj
+
+# System files
+.DS_Store
+.Spotlight-V100
+.Trashes
+._*
+Thumbs.db
+
+# Results directory (created by scripts)
+# Uncomment if you don't want to track results
+# results/
+
+# Temporary files
+*.tmp
+*.log
+*~
