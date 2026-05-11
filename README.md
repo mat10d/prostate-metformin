@@ -6,7 +6,7 @@
 
 **Journal:** European Urology (2023)
 
-**DOI:** https://www.sciencedirect.com/science/article/pii/S0302283823030166
+**DOI:** [10.1016/j.eururo.2023.07.016](https://doi.org/10.1016/j.eururo.2023.07.016)
 
 **Principal Investigator:** Cory Abate-Shen, PhD
 
