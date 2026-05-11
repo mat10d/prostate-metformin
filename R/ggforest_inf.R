@@ -1,3 +1,21 @@
+################################################################################
+# ggforest_inf.R
+# Modified Forest Plot Function for Handling Infinite Confidence Intervals
+#
+# This is a modified version of survminer::ggforest() that gracefully handles
+# Cox regression models where some covariates produce infinite confidence
+# intervals (e.g., when there are zero events in one level of a factor).
+#
+# The modification replaces infinite upper CI bounds with the maximum finite CI
+# value and near-zero lower CI bounds with the minimum finite CI value, allowing
+# the forest plot to render without errors.
+#
+# Used by: 04_multivariate_forest_plots.R (High EAU risk stratum model)
+#
+# Original authors: Przemyslaw Biecek, Fabian Scheipl (survminer package)
+# Modified for this project to handle edge cases in small subgroup analyses.
+################################################################################
+
 #' Forest Plot for Cox Proportional Hazards Model
 #'
 #' @description Drawing Forest Plot for Cox proportional hazards model. In two panels the model structure is presented.
@@ -60,7 +78,7 @@ ggforest_inf <- function(model, data = NULL,
     var <- names(terms)[i]
     #### ADD with = FALSE because error during testing
     if (terms[i] %in% c("factor", "character")) {
-      adf <- as.data.frame(table(data[, var, with = FALSE]))
+      adf <- as.data.frame(table(data[, var]))
       cbind(var = var, adf, pos = 1:nrow(adf))
     } else if (terms[i] == "numeric") {
       data.frame(

@@ -1,10 +1,32 @@
 ################################################################################
+# 04_multivariate_forest_plots.R
 # Multivariate Cox Regression with Forest Plots
+#
 # Project: Metformin overcomes the consequences of NKX3.1 loss to suppress
 #          prostate cancer progression
-# PI: Cory Abate-Shen
-# Published: European Urology (2023)
-# DOI: https://www.sciencedirect.com/science/article/pii/S0302283823030166
+# Journal: European Urology (2024)
+# DOI:     https://doi.org/10.1016/j.eururo.2023.07.016
+# PI:      Cory Abate-Shen
+#
+# Paper Figure Mapping (Cohort 1):
+#   - Full multivariate forest plot (all patients)  → Fig. 5K
+#   - Intermediate EAU risk stratum forest plot     → Supplementary Table 4
+#   - High EAU risk stratum forest plot             → Supplementary Table 4
+#
+# Note: Fig. 5K shows hazard ratios from multivariate Cox regression
+#       including NKX3.1, metformin, EAU risk, PSA, and Gleason score.
+#       Supplementary Tables 4 and 5 contain the coefficient tables.
+#
+# Outputs:
+#   results/multivariate_forest/BCR_multi-full.pdf             - Forest plot (all)
+#   results/multivariate_forest/BCR_multi-full.txt             - Cox summary
+#   results/multivariate_forest/BCR_multi-full_coefficients.csv
+#   results/multivariate_forest/BCR_multi-EAU_int.pdf          - Forest plot (Int. EAU)
+#   results/multivariate_forest/BCR_multi-EAU_int.txt          - Cox summary
+#   results/multivariate_forest/BCR_multi-EAU_int_coefficients.csv
+#   results/multivariate_forest/BCR_multi-EAU_high.pdf         - Forest plot (High EAU)
+#   results/multivariate_forest/BCR_multi-EAU_high.txt         - Cox summary
+#   results/multivariate_forest/BCR_multi-EAU_high_coefficients.csv
 ################################################################################
 
 # Load required libraries
@@ -112,6 +134,14 @@ BCR_full <- mysheets$`NKX3.1 expression` %>% dplyr::select(`Case #`, NKX3.1) %>%
   dplyr::left_join(mysheets$`PSA levels`, by = "Case #") %>%
   dplyr::left_join(mysheets$`Gleason Score` %>% dplyr::select(`Case #`, g_score), by = "Case #") %>%
   dplyr::left_join(mysheets$`BCR-free Estimated Survival`, by = "Case #") %>%
+  # NOTE: readxl may import some numeric columns as character type.
+  # Ensure numeric types before analysis.
+  dplyr::mutate(
+    Months   = as.numeric(Months),
+    BCR      = as.numeric(BCR),
+    PSA      = as.numeric(PSA),
+    Metformin = as.numeric(Metformin)
+  ) %>%
   # Convert EAU risk to factor with descriptive labels
   dplyr::mutate(EAU_risk = factor(EAU_risk, levels = c(1,2,3),
                                   labels = c("Low EAU risk", "Int. EAU risk", "High EAU risk"))) %>%
@@ -133,7 +163,7 @@ BCR_full <- mysheets$`NKX3.1 expression` %>% dplyr::select(`Case #`, NKX3.1) %>%
 # Create results directory if it doesn't exist
 dir.create("results/multivariate_forest", recursive = TRUE, showWarnings = FALSE)
 
-## 1. Full Multivariate Model (All Patients)
+## 1. Full Multivariate Model (All Patients) → Fig. 5K
 cat("\n=== Full Multivariate Cox Regression Model ===\n")
 BCR <- BCR_full %>%
   dplyr::filter(complete.cases(.))
@@ -149,13 +179,14 @@ sink()
 coef_table <- as.data.frame(summary(res.cox)$coefficients)
 write.csv(coef_table, "results/multivariate_forest/BCR_multi-full_coefficients.csv")
 
-# Generate forest plot
-ggforest(res.cox)
-ggsave("results/multivariate_forest/BCR_multi-full.pdf", width = 9)
+# Generate forest plot → Fig. 5K
+pdf("results/multivariate_forest/BCR_multi-full.pdf", width = 9, height = 6)
+print(ggforest_inf(res.cox, data = BCR))
+dev.off()
 
 cat("Model fitted for", nrow(BCR), "patients\n")
 
-## 2. Multivariate Model - Intermediate EAU Risk Stratum
+## 2. Multivariate Model - Intermediate EAU Risk Stratum → Supplementary Table 4
 cat("\n=== Multivariate Model: Intermediate EAU Risk ===\n")
 BCR <- BCR_full %>%
   dplyr::filter(`EAU risk group` == "Int. EAU risk") %>%
@@ -173,12 +204,13 @@ coef_table <- as.data.frame(summary(res.cox)$coefficients)
 write.csv(coef_table, "results/multivariate_forest/BCR_multi-EAU_int_coefficients.csv")
 
 # Generate forest plot
-ggforest(res.cox)
-ggsave("results/multivariate_forest/BCR_multi-EAU_int.pdf", width = 9)
+pdf("results/multivariate_forest/BCR_multi-EAU_int.pdf", width = 9, height = 6)
+print(ggforest_inf(res.cox, data = BCR))
+dev.off()
 
 cat("Model fitted for", nrow(BCR), "patients with Intermediate EAU risk\n")
 
-## 3. Multivariate Model - High EAU Risk Stratum
+## 3. Multivariate Model - High EAU Risk Stratum → Supplementary Table 4
 cat("\n=== Multivariate Model: High EAU Risk ===\n")
 BCR <- BCR_full %>%
   dplyr::filter(`EAU risk group` == "High EAU risk") %>%
@@ -196,8 +228,9 @@ coef_table <- as.data.frame(summary(res.cox)$coefficients)
 write.csv(coef_table, "results/multivariate_forest/BCR_multi-EAU_high_coefficients.csv")
 
 # Generate forest plot using the modified ggforest_inf function to handle infinite CIs
-ggforest_inf(res.cox)
-ggsave("results/multivariate_forest/BCR_multi-EAU_high.pdf", width = 9)
+pdf("results/multivariate_forest/BCR_multi-EAU_high.pdf", width = 9, height = 6)
+print(ggforest_inf(res.cox, data = BCR))
+dev.off()
 
 cat("Model fitted for", nrow(BCR), "patients with High EAU risk\n")
 

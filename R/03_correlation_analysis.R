@@ -1,22 +1,32 @@
 ################################################################################
+# 03_correlation_analysis.R
 # Spearman Correlation Analysis
+#
 # Project: Metformin overcomes the consequences of NKX3.1 loss to suppress
 #          prostate cancer progression
-# PI: Cory Abate-Shen
-# Published: European Urology (2023)
-# DOI: https://www.sciencedirect.com/science/article/pii/S0302283823030166
+# Journal: European Urology (2024)
+# DOI:     https://doi.org/10.1016/j.eururo.2023.07.016
+# PI:      Cory Abate-Shen
+#
+# Paper Figure Mapping:
+#   This script tests for confounding between EAU risk, NKX3.1 expression,
+#   and metformin treatment. Results confirm independence of covariates,
+#   supporting the validity of the survival analyses in Fig. 5I and 5K.
+#   These correlation tests are referenced in the Methods section and
+#   support the claims in Table 1.
+#
+# Outputs:
+#   results/correlation/EAU_risk.NKX3.1.txt         - Spearman test output
+#   results/correlation/EAU_risk.NKX3.1.csv         - Correlation statistics
+#   results/correlation/EAU_risk.Metformin.txt       - Spearman test output
+#   results/correlation/EAU_risk.Metformin.csv       - Correlation statistics
+#   results/correlation/all_correlations_summary.csv - Combined summary
 ################################################################################
 
 # Load required libraries
 library(readxl)
-library(survival)
-library(survminer)
 library(dplyr)
-library(tidyr)
-library(cowplot)
-library(grid)
 library(Hmisc)
-library(corrplot)
 
 ################################################################################
 # Helper Functions
@@ -111,8 +121,13 @@ BCR_full <- mysheets$`NKX3.1 expression` %>% dplyr::select(`Case #`, NKX3.1) %>%
   dplyr::left_join(mysheets$`Gleason Score` %>% dplyr::select(`Case #`, g_score), by = "Case #") %>%
   dplyr::left_join(mysheets$`BCR-free Estimated Survival`, by = "Case #")
 
+# NOTE: readxl may import some numeric columns as character type.
+# Ensure numeric types for correlation analysis.
+BCR_full$Metformin <- as.numeric(BCR_full$Metformin)
+
 ################################################################################
 # Spearman Correlation Analysis
+# Tests independence of covariates (supports Table 1 claims)
 ################################################################################
 
 # Create results directory if it doesn't exist

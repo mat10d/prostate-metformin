@@ -1,10 +1,29 @@
 ################################################################################
-# Kaplan-Meier Survival Analysis
+# 01_survival_analysis.R
+# Kaplan-Meier Survival Analysis for BCR-free Survival
+#
 # Project: Metformin overcomes the consequences of NKX3.1 loss to suppress
 #          prostate cancer progression
-# PI: Cory Abate-Shen
-# Published: European Urology (2023)
-# DOI: https://www.sciencedirect.com/science/article/pii/S0302283823030166
+# Journal: European Urology (2024)
+# DOI:     https://doi.org/10.1016/j.eururo.2023.07.016
+# PI:      Cory Abate-Shen
+#
+# Paper Figure Mapping (Cohort 1):
+#   - Univariate KM curves (NKX3.1, Metformin, EAU Risk) → Supplementary Fig. 6C
+#   - Univariate KM curves (PSA, Gleason Score)          → Supplementary Fig. 6C
+#   - Multivariate KM: NKX3.1 × Metformin               → Fig. 5I (key result)
+#   - Multivariate KM: NKX3.1 × EAU Risk                → Supplementary Fig. 6A
+#   - Multivariate KM: EAU Risk × Metformin              → Supplementary analysis
+#   - Three-way: NKX3.1 × EAU Risk × Metformin           → Supplementary analysis
+#
+# Outputs:
+#   results/BCR_full_data.csv                 - Merged patient-level data
+#   results/univariate/BCR_*.pdf              - Individual KM survival curves
+#   results/univariate/BCR_*.txt              - Cox regression summaries
+#   results/multivariate/BCR_*_no-p.pdf       - Grouped KM survival curves
+#   results/multivariate/BCR_*.txt            - Cox regression summaries
+#   results/multivariate/BCR_*_pairwise.csv   - Pairwise log-rank p-values
+#   results/multivariate/BCR_*_coefficients.csv - Cox model coefficients
 ################################################################################
 
 # Load required libraries
@@ -110,17 +129,25 @@ BCR_full <- mysheets$`NKX3.1 expression` %>% dplyr::select(`Case #`, NKX3.1) %>%
   dplyr::left_join(mysheets$`Gleason Score` %>% dplyr::select(`Case #`, g_score), by = "Case #") %>%
   dplyr::left_join(mysheets$`BCR-free Estimated Survival`, by = "Case #")
 
+# NOTE: readxl may import some numeric columns (Months, BCR, PSA, Metformin)
+# as character type. Ensure numeric types for survival analysis.
+BCR_full$Months   <- as.numeric(BCR_full$Months)
+BCR_full$BCR      <- as.numeric(BCR_full$BCR)
+BCR_full$PSA      <- as.numeric(BCR_full$PSA)
+BCR_full$Metformin <- as.numeric(BCR_full$Metformin)
+
 # Save the processed data
 write.csv(BCR_full, "results/BCR_full_data.csv", row.names = FALSE)
 
 ################################################################################
 # Individual Univariate Survival Analyses
+# Paper: Supplementary Fig. 6C (cohort 1 univariate KM curves)
 ################################################################################
 
 # Create results directory if it doesn't exist
 dir.create("results/univariate", recursive = TRUE, showWarnings = FALSE)
 
-## 1. NKX3.1 Expression
+## 1. NKX3.1 Expression → Supplementary Fig. 6C panel
 cat("\n=== Analyzing NKX3.1 Expression ===\n")
 BCR <- BCR_full %>% dplyr::select(NKX3.1, Months, BCR) %>%
   dplyr::filter(complete.cases(.))
@@ -152,7 +179,7 @@ pdf("results/univariate/BCR_nkx3.1.pdf", width = 7, height = 9)
 print(BCR_nkx3.1, newpage = FALSE)
 dev.off()
 
-## 2. Metformin Treatment
+## 2. Metformin Treatment → Supplementary Fig. 6C panel
 cat("\n=== Analyzing Metformin Treatment ===\n")
 BCR <- BCR_full %>% dplyr::select(Metformin, Months, BCR) %>%
   dplyr::filter(complete.cases(.))
@@ -182,7 +209,7 @@ pdf("results/univariate/BCR_metformin.pdf", width = 7, height = 9)
 print(BCR_metformin, newpage = FALSE)
 dev.off()
 
-## 3. EAU Risk Stratification
+## 3. EAU Risk Stratification → Supplementary Fig. 6C panel
 cat("\n=== Analyzing EAU Risk Stratification ===\n")
 BCR <- BCR_full %>% dplyr::select(EAU_risk, Months, BCR) %>%
   dplyr::filter(complete.cases(.))
@@ -210,7 +237,7 @@ pdf("results/univariate/BCR_eau_no-p.pdf", width = 7, height = 9)
 print(BCR_eau, newpage = FALSE)
 dev.off()
 
-## 4. PSA Levels (dichotomized at 10)
+## 4. PSA Levels (dichotomized at 10) → Supplementary Fig. 6C panel
 cat("\n=== Analyzing PSA Levels ===\n")
 BCR <- BCR_full %>% dplyr::select(PSA, Months, BCR) %>%
   dplyr::filter(complete.cases(.)) %>%
@@ -242,7 +269,7 @@ grDevices::cairo_pdf("results/univariate/BCR_psa.pdf", width = 7, height = 9)
 print(BCR_psa, newpage = FALSE)
 dev.off()
 
-## 5. Gleason Score (dichotomized at 7)
+## 5. Gleason Score (dichotomized at 7) → Supplementary Fig. 6C panel
 cat("\n=== Analyzing Gleason Score ===\n")
 BCR <- BCR_full %>% dplyr::select(g_score, Months, BCR) %>%
   dplyr::filter(complete.cases(.)) %>%
@@ -280,7 +307,7 @@ dev.off()
 
 dir.create("results/multivariate", recursive = TRUE, showWarnings = FALSE)
 
-## 1. NKX3.1 Expression & EAU Risk
+## 1. NKX3.1 Expression & EAU Risk → Supplementary Fig. 6A
 cat("\n=== Analyzing NKX3.1 Expression & EAU Risk ===\n")
 BCR <- BCR_full %>% dplyr::select(NKX3.1, EAU_risk, Months, BCR) %>%
   dplyr::filter(complete.cases(.))
@@ -311,7 +338,7 @@ pdf("results/multivariate/BCR_nkx3.1_eau_no-p.pdf", width = 7, height = 9)
 print(BCR_nkx3.1_eau, newpage = FALSE)
 dev.off()
 
-## 2. NKX3.1 Expression & Metformin Intervention (KEY ANALYSIS)
+## 2. NKX3.1 Expression & Metformin Intervention → Fig. 5I (KEY RESULT)
 cat("\n=== Analyzing NKX3.1 Expression & Metformin Intervention ===\n")
 BCR <- BCR_full %>% dplyr::select(NKX3.1, Metformin, Months, BCR) %>%
   dplyr::filter(complete.cases(.))
@@ -346,7 +373,7 @@ pdf("results/multivariate/BCR_nkx3.1_metformin_no-p.pdf", width = 7, height = 9)
 print(BCR_nkx3.1_metformin, newpage = FALSE)
 dev.off()
 
-## 3. EAU Risk & Metformin Intervention
+## 3. EAU Risk & Metformin Intervention → Supplementary analysis
 cat("\n=== Analyzing EAU Risk & Metformin Intervention ===\n")
 BCR <- BCR_full %>% dplyr::select(EAU_risk, Metformin, Months, BCR) %>%
   dplyr::filter(complete.cases(.))
@@ -377,7 +404,7 @@ pdf("results/multivariate/BCR_eau_metformin_no-p.pdf", width = 7, height = 9)
 print(BCR_eau_metformin, newpage = FALSE)
 dev.off()
 
-## 4. Full three-way model: NKX3.1 & EAU Risk & Metformin
+## 4. Full three-way model: NKX3.1 & EAU Risk & Metformin → Supplementary analysis
 cat("\n=== Analyzing NKX3.1 Expression & EAU Risk & Metformin Intervention ===\n")
 BCR <- BCR_full %>% dplyr::select(NKX3.1, EAU_risk, Metformin, Months, BCR) %>%
   dplyr::filter(complete.cases(.))

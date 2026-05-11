@@ -1,20 +1,25 @@
 ################################################################################
+# 02_barplot_association.R
 # Association Analysis: NKX3.1 Expression and EAU Risk Stratification
+#
 # Project: Metformin overcomes the consequences of NKX3.1 loss to suppress
 #          prostate cancer progression
-# PI: Cory Abate-Shen
-# Published: European Urology (2023)
-# DOI: https://www.sciencedirect.com/science/article/pii/S0302283823030166
+# Journal: European Urology (2024)
+# DOI:     https://doi.org/10.1016/j.eururo.2023.07.016
+# PI:      Cory Abate-Shen
+#
+# Paper Figure Mapping (Cohort 1):
+#   - Grouped bar plot: NKX3.1 vs EAU risk distribution → Supplementary Fig. 6A
+#     Shows patient counts by NKX3.1 expression level across EAU risk groups
+#
+# Outputs:
+#   results/association/nkx3.1_eau_risk_counts.csv  - Summary count table
+#   results/association/barplot_nkx3.1_eau.pdf      - Grouped bar plot
 ################################################################################
 
 # Load required libraries
 library(readxl)
-library(survival)
-library(survminer)
 library(dplyr)
-library(tidyr)
-library(cowplot)
-library(grid)
 library(ggplot2)
 
 ################################################################################
@@ -40,32 +45,6 @@ read_excel_allsheets <- function(filename, tibble = FALSE) {
 
 # Read all Excel sheets
 mysheets <- read_excel_allsheets("data/Metformin_data.xlsx")
-
-# Convert Gleason Score from Y/N columns to numeric score
-mysheets$`Gleason Score`[is.na(mysheets$`Gleason Score`)] <- "N"
-
-for(i in 1:nrow(mysheets$`Gleason Score`)){
-  if(mysheets$`Gleason Score`$five[i] == "Y"){
-    mysheets$`Gleason Score`$g_score[i] <- 5
-  }
-  if(mysheets$`Gleason Score`$six[i] == "Y"){
-    mysheets$`Gleason Score`$g_score[i] <- 6
-  }
-  if(mysheets$`Gleason Score`$seven[i] == "Y"){
-    mysheets$`Gleason Score`$g_score[i] <- 7
-  }
-  if(mysheets$`Gleason Score`$eight[i] == "Y"){
-    mysheets$`Gleason Score`$g_score[i] <- 8
-  }
-  if(mysheets$`Gleason Score`$nine[i] == "Y"){
-    mysheets$`Gleason Score`$g_score[i] <- 9
-  }
-  if(mysheets$`Gleason Score`$five[i] == "N" & mysheets$`Gleason Score`$six[i] == "N" &
-     mysheets$`Gleason Score`$seven[i] == "N" & mysheets$`Gleason Score`$eight[i] == "N" &
-     mysheets$`Gleason Score`$nine[i] == "N"){
-    mysheets$`Gleason Score`$g_score[i] <- NA
-  }
-}
 
 # Convert EAU Risk from Y/N columns to numeric categories
 mysheets$`EAU Risk`[is.na(mysheets$`EAU Risk`)] <- "N"
@@ -103,7 +82,7 @@ for(i in 1:nrow(mysheets$`NKX3.1 expression`)){
 }
 
 ################################################################################
-# Association Analysis: NKX3.1 vs EAU Risk
+# Association Analysis: NKX3.1 vs EAU Risk → Supplementary Fig. 6A
 ################################################################################
 
 cat("\n=== Association Analysis: NKX3.1 Expression and EAU Risk ===\n")
@@ -137,7 +116,7 @@ dir.create("results/association", recursive = TRUE, showWarnings = FALSE)
 write.csv(BCR_full_table, "results/association/nkx3.1_eau_risk_counts.csv", row.names = FALSE)
 
 ################################################################################
-# Visualization: Grouped Bar Plot
+# Visualization: Grouped Bar Plot → Supplementary Fig. 6A
 ################################################################################
 
 cat("\n=== Creating grouped bar plot ===\n")
